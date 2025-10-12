@@ -2,4 +2,4 @@ name: "astrbot_plugin_echoscore"
 author: "loping151 & timetetng"
 description: "基于loping151识别《鸣潮》声骸评分API的astrbot插件，提供LLM交互和指令两种使用方式"
 version: "3.0.1"
-repo_url: "https://github.com/timetetng/astrbot_plugin_echoscore" # 请替换为您的仓库地址
+repo_url: "https://github.com/timetetng/astrbot_plugin_echoscore"
