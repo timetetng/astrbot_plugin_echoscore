@@ -174,7 +174,6 @@ class ScoreEchoPlugin(Star):
         result = await self._perform_scoring(command_str, images)
 
         if result["success"]:
-            # 【修复】使用 base64:// URI 格式来发送图片
             base64_uri = f"base64://{result['image_base64']}"
             yield event.chain_result([Comp.Image(file=base64_uri)])
         else:
@@ -200,8 +199,6 @@ class ScoreEchoPlugin(Star):
         images = await get_image_from_event(event)
         if not images:
             return "评分失败，因为我没有在当前对话中找到任何图片。请提醒用户需要发送一张声骸截图。"
-
-        await event.send(event.plain_result("好的，已收到图片，正在为您评分..."))
         
         result = await self._perform_scoring(command_str, images)
 
