@@ -216,7 +216,8 @@ class ScoreEchoPlugin(Star):
     async def score_wuthering_waves_echo(self, event: AstrMessageEvent, role: Optional[str] = None, 
                                         cost: Optional[str] = None, main_stat: Optional[str] = None) -> str:
         """
-        请在用户发送询问有关声骸评分时使用。本工具可以处理单张或多张图片，支持对比评分任务。
+        请在用户询问有关鸣潮角色声骸评分时使用。
+        本工具可以处理单张或多张图片，支持对比评分任务。
         用户往往会说xx1c、xx3c等来指定参数，其中xx是角色名，1c/3c/4c是cost。
         Args:
             role (string): 角色中文名。如果用户没有指定，则忽略。
@@ -244,7 +245,7 @@ class ScoreEchoPlugin(Star):
         
         if result["success"]:
             await event.send(event.chain_result([Comp.Image(file=f"base64://{result['image_base64']}")]))
-            return f"{resolved_role}的声骸评分图片已发送给用户。"
+            return f"{resolved_role}的声骸评分图片已发送，请继续和用户正常回复。"
         else:
             return f"{resolved_role}的声骸评分失败了，请将以下原因告知用户：{result['error']}"
 
