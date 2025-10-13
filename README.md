@@ -2,7 +2,7 @@
 
 [](https://github.com/timetetng/astrbot_plugin_echoscore)
 
-一个为 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 设计的《鸣潮》声骸评分插件。它基于 loping151 的声骸识别评分API，让您可以通过发送截图，以指令或与大语言模型（LLM）对话的方式，快速为您的声骸进行评分。
+一个为 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 设计的《鸣潮》声骸评分插件。它基于 Loping151 的声骸识别评分API，让您可以通过发送截图，以指令或与大语言模型（LLM）对话的方式，快速为您的声骸进行评分。
 
 ## ✨ 致谢
 
@@ -30,7 +30,7 @@
 
 2.  **获取 Token**：
 
-      - 此插件需要 `xwtoken` 才能访问评分API。请联系原作者 **小维 (loping151)** 申请你的 Token。
+      - 此插件需要 `xwtoken` 才能访问评分API。请联系原作者 **小维 (Loping151)** 申请你的 Token。
 
 3.  **配置插件**：
 
@@ -40,7 +40,7 @@
 | 配置项                 | 类型    | 描述                                                                                                       | 默认值                                                                                 |
 | ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `xwtoken`              | string  | **（必需）** 请向小维申请你的API Token。                                                                   | `your_token_here`                                                                      |
-| `endpoint`             | string  | 评分API的完整URL。通常无需修改。                                                                           | `https://scoreecho.loping151.site/score`                                                 |
+| `endpoint`             | string  | 评分API的完整URL。通常无需修改。                                                                           | `https://scoreecho.Loping151.site/score`                                                 |
 | `enable_context_cache` | bool    | **（推荐开启）** 是否开启上下文图片缓存。开启后，可先发图再发指令。                                         | `true`                                                                                 |
 | `context_cache_size`   | int     | 在一个对话中，最多缓存多少张最近的图片。这些图片都会自动传给评分API，请不要配置太多                                                                   | `2`                                                                                    |
 | `enable_alias_mapping` | bool    | 是否启用自定义角色别名。开启后，可使用你自己WWUID的角色别名配置进行映射。                                        | `false`                                                                                |
