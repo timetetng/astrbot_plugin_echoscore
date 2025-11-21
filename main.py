@@ -39,7 +39,7 @@ async def get_image_from_direct_event(event: AstrMessageEvent) -> List[Comp.Imag
     "astrbot_plugin_echoscore",
     "loping151 & timetetng",
     "基于loping151识别《鸣潮》声骸评分API的astrbot插件，提供LLM交互和指令两种使用方式",
-    "3.0.1", 
+    "3.0.2", 
     "https://github.com/timetetng/astrbot_plugin_echoscore"
 )
 class ScoreEchoPlugin(Star):
@@ -182,10 +182,10 @@ class ScoreEchoPlugin(Star):
         return resolved_name
 
     # --- 指令层 ---
-    @filter.command("评分", alias={'声骸', '生蚝'})
-    async def score_command_handler(self, event: AstrMessageEvent, role: str, cost: str, main_stat: Optional[str] = None):
+    @filter.command("评分", alias={'查分', '声骸', '生蚝'})
+    async def score_command_handler(self, event: AstrMessageEvent, role: str = None , cost: str = None , main_stat: Optional[str] = None):
         """
-        为声骸进行评分。指令格式: /评分 <角色名> <cost> [主词条]
+        为声骸进行评分。指令格式: /评分 [角色名] [cost] [主词条]
         """
         images = await self._get_images_from_context(event)
 
@@ -193,7 +193,7 @@ class ScoreEchoPlugin(Star):
             yield event.plain_result("请在发送命令的同时附带声骸截图，或回复包含截图的消息。")
             return
         # 1. 解析角色别名
-        resolved_role = self._resolve_role_alias(role)
+        resolved_role = self._resolve_role_alias(role) if role else None
         
         # 2. 将解析后的参数重新组合成API需要的字符串
         parts = [p for p in [resolved_role, cost, main_stat] if p]
