@@ -1,26 +1,27 @@
 import base64
-import httpx
-import time
-import asyncio
 import json
+import time
 from io import BytesIO
+from typing import Any
+
+import httpx
 from PIL import Image
-from typing import List, Optional, Dict, Any, Tuple
 
-from astrbot.api import logger, AstrBotConfig
-from astrbot.api.event import filter, AstrMessageEvent
-from astrbot.api.star import Context, Star, register
 import astrbot.api.message_components as Comp
+from astrbot.api import AstrBotConfig, logger
+from astrbot.api.event import AstrMessageEvent, filter
+from astrbot.api.star import Context, Star, register
 
-async def get_image_from_direct_event(event: AstrMessageEvent) -> List[Comp.Image]:
+
+async def get_image_from_direct_event(event: AstrMessageEvent) -> list[Comp.Image]:
     """[直接模式] 从当前事件中提取所有图片组件，这是最高优先级的图片来源。"""
     images = []
-    if hasattr(event, 'message_obj') and event.message_obj and hasattr(event.message_obj, 'message'):
+    if hasattr(event, "message_obj") and event.message_obj and hasattr(event.message_obj, "message"):
         for component in event.message_obj.message:
             if isinstance(component, Comp.Image):
                 images.append(component)
             elif isinstance(component, Comp.Reply):
-                replied_chain = getattr(component, 'chain', None)
+                replied_chain = getattr(component, "chain", None)
                 if replied_chain:
                     for reply_comp in replied_chain:
                         if isinstance(reply_comp, Comp.Image):
@@ -39,7 +40,7 @@ async def get_image_from_direct_event(event: AstrMessageEvent) -> List[Comp.Imag
     "astrbot_plugin_echoscore",
     "loping151 & timetetng",
     "基于loping151识别《鸣潮》声骸评分API的astrbot插件，提供LLM交互和指令两种使用方式",
-    "3.0.2", 
+    "3.0.2",
     "https://github.com/timetetng/astrbot_plugin_echoscore"
 )
 class ScoreEchoPlugin(Star):
@@ -47,32 +48,32 @@ class ScoreEchoPlugin(Star):
         super().__init__(context)
         self.config = config
         self.http_client = httpx.AsyncClient(timeout=30.0)
-        
+
         # --- 从配置初始化缓存和别名设置 ---
         self.enable_context_cache = self.config.get("enable_context_cache", True)
         self.context_cache_size = self.config.get("context_cache_size", 3)
         self.enable_alias_mapping = self.config.get("enable_alias_mapping", False)
         self.alias_file_path = self.config.get("alias_file_path", "")
-        self.alias_map: Dict[str, str] = {}
-        
+        self.alias_map: dict[str, str] = {}
+
         self.submission_window_seconds = 60
-        self.context_image_cache: Dict[str, Tuple[List[Comp.Image], float]] = {}
-        
-        logger.info(f"鸣潮声骸评分插件加载成功")
+        self.context_image_cache: dict[str, tuple[list[Comp.Image], float]] = {}
+
+        logger.info("鸣潮声骸评分插件加载成功")
         logger.info(f"上下文图片缓存: {'已开启' if self.enable_context_cache else '已关闭'}, 缓存数量: {self.context_cache_size}")
         logger.info(f"角色别名映射: {'已开启' if self.enable_alias_mapping else '已关闭'}")
 
         # --- 加载别名文件并构建反向映射表 ---
         if self.enable_alias_mapping and self.alias_file_path:
             try:
-                with open(self.alias_file_path, 'r', encoding='utf-8') as f:
+                with open(self.alias_file_path, encoding="utf-8") as f:
                     alias_data = json.load(f)
-                
+
                 # 构建 {别名: 本名} 的反向映射，方便快速查找
                 for canonical_name, aliases in alias_data.items():
                     for alias in aliases:
                         self.alias_map[alias.lower()] = canonical_name # 使用小写以忽略大小写
-                
+
                 logger.info(f"成功加载角色别名文件，共构建 {len(self.alias_map)} 条别名映射。")
 
             except FileNotFoundError:
@@ -93,7 +94,7 @@ class ScoreEchoPlugin(Star):
 
         umo = event.unified_msg_origin
         images_in_message = [comp for comp in event.message_obj.message if isinstance(comp, Comp.Image)]
-        
+
         if images_in_message:
             now = time.time()
             cached_images, last_update_time = self.context_image_cache.get(umo, ([], 0))
@@ -110,7 +111,7 @@ class ScoreEchoPlugin(Star):
                 logger.info(f"[EchoScore Cache] 已更新会话 {umo} 的上下文缓存，当前共 {len(cached_images)} 张图片。")
 
 
-    async def _get_images_from_context(self, event: AstrMessageEvent) -> List[Comp.Image]:
+    async def _get_images_from_context(self, event: AstrMessageEvent) -> list[Comp.Image]:
         images = await get_image_from_direct_event(event)
         if images:
             logger.info(f"图片获取：从直接消息/引用中找到 {len(images)} 张图片。")
@@ -122,11 +123,11 @@ class ScoreEchoPlugin(Star):
             if cached_data:
                 images = cached_data[0]
                 logger.info(f"图片获取：从上下文缓存为会话 {umo} 找到了 {len(images)} 张图片。")
-        
+
         return images
 
 
-    async def _perform_scoring(self, command_str: str, images: List[Comp.Image]) -> Dict[str, Any]:
+    async def _perform_scoring(self, command_str: str, images: list[Comp.Image]) -> dict[str, Any]:
         images_b64 = []
         try:
             for img_comp in images:
@@ -144,7 +145,7 @@ class ScoreEchoPlugin(Star):
                         if output_buffer.tell() < MAX_SIZE_BYTES: break
                         quality -= 5
                     compressed_image_bytes = output_buffer.getvalue()
-                images_b64.append(base64.b64encode(compressed_image_bytes).decode('utf-8'))
+                images_b64.append(base64.b64encode(compressed_image_bytes).decode("utf-8"))
         except Exception as e: return {"success": False, "error": f"图片处理失败: {e}"}
         if not images_b64: return {"success": False, "error": "未能成功处理任何有效图片。"}
         api_token = self.config.get("xwtoken", "your_token_here")
@@ -168,13 +169,13 @@ class ScoreEchoPlugin(Star):
             yield event.plain_result("当前会話的声骸评分图片缓存已清空！")
         else:
             yield event.plain_result("当前会話没有需要清空的缓存哦~")
-    
+
     # --- 辅助函数，用于解析角色别名 ---
-    def _resolve_role_alias(self, role_input: Optional[str]) -> Optional[str]:
+    def _resolve_role_alias(self, role_input: str | None) -> str | None:
         """根据加载的别名表解析角色名"""
         if not self.enable_alias_mapping or not role_input:
             return role_input # 如果功能关闭或输入为空，直接返回原值
-        
+
         # 使用.get()方法，如果找不到别名，则返回原输入值
         resolved_name = self.alias_map.get(role_input.lower(), role_input)
         if resolved_name != role_input:
@@ -182,8 +183,8 @@ class ScoreEchoPlugin(Star):
         return resolved_name
 
     # --- 指令层 ---
-    @filter.command("评分", alias={'查分', '声骸', '生蚝'})
-    async def score_command_handler(self, event: AstrMessageEvent, role: str = None , cost: str = None , main_stat: Optional[str] = None):
+    @filter.command("评分", alias={"查分", "声骸", "生蚝"})
+    async def score_command_handler(self, event: AstrMessageEvent, role: str = None , cost: str = None , main_stat: str | None = None):
         """
         为声骸进行评分。指令格式: /评分 [角色名] [cost] [主词条]
         """
@@ -194,7 +195,7 @@ class ScoreEchoPlugin(Star):
             return
         # 1. 解析角色别名
         resolved_role = self._resolve_role_alias(role) if role else None
-        
+
         # 2. 将解析后的参数重新组合成API需要的字符串
         parts = [p for p in [resolved_role, cost, main_stat] if p]
         command_str = " ".join(parts)
@@ -206,15 +207,15 @@ class ScoreEchoPlugin(Star):
             logger.info(f"指令任务开始，已清除会话 {umo} 的上下文缓存。")
 
         result = await self._perform_scoring(command_str, images)
-        
+
         if result["success"]:
             yield event.chain_result([Comp.Image(file=f"base64://{result['image_base64']}")])
         else:
             yield event.plain_result(f"评分失败了：\n{result['error']}")
     # --- LLM 工具层 ---
     @filter.llm_tool(name="score_wuthering_waves_echo")
-    async def score_wuthering_waves_echo(self, event: AstrMessageEvent, role: Optional[str] = None, 
-                                        cost: Optional[str] = None, main_stat: Optional[str] = None) -> str:
+    async def score_wuthering_waves_echo(self, event: AstrMessageEvent, role: str | None = None,
+                                        cost: str | None = None, main_stat: str | None = None) -> str:
         """
         请在用户询问有关鸣潮角色声骸评分时使用。
         本工具可以处理单张或多张图片，支持对比评分任务。
@@ -225,24 +226,24 @@ class ScoreEchoPlugin(Star):
             main_stat (string): 声骸的主词条，例如'暴击'或'攻击'。如果用户没有指定，则忽略。
         """
         logger.info(f"LLM tool 'score_wuthering_waves_echo' called with: role={role}, cost={cost}, main_stat={main_stat}")
-        
+
         images = await self._get_images_from_context(event)
 
         if not images:
             return "评分失败，我没有在用户的消息或上下文中找到任何图片。请提醒用户需要发送一张声骸截图。"
-        
+
         umo = event.unified_msg_origin
         if umo in self.context_image_cache:
             del self.context_image_cache[umo]
             logger.info(f"LLM任务开始，已清除会话 {umo} 的上下文缓存。")
-        
+
         # --- 解析角色别名 ---
         resolved_role = self._resolve_role_alias(role)
-        
+
         parts = [p for p in [resolved_role, cost, main_stat] if p]
         command_str = " ".join(parts)
         result = await self._perform_scoring(command_str, images)
-        
+
         if result["success"]:
             await event.send(event.chain_result([Comp.Image(file=f"base64://{result['image_base64']}")]))
             return f"{resolved_role}的声骸评分图片已发送，请继续和用户正常回复。"
