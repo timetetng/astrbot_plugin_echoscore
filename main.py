@@ -48,7 +48,7 @@ async def get_image_from_direct_event(event: AstrMessageEvent) -> list[Comp.Imag
     "astrbot_plugin_echoscore",
     "loping151 & timetetng",
     "基于loping151识别《鸣潮》声骸评分API的astrbot插件，提供LLM交互和指令两种使用方式",
-    "3.1.0",
+    "3.1.1",
     "https://github.com/timetetng/astrbot_plugin_echoscore",
 )
 class ScoreEchoPlugin(Star):
@@ -233,7 +233,7 @@ class ScoreEchoPlugin(Star):
         return resolved_name
 
     # --- LLM 钩子 (实现无空格指令解析) ---
-    @filter.on_llm_request()
+    @filter.on_llm_request(priority=1919810)
     async def on_llm_request_handler(
         self, event: AstrMessageEvent, req: ProviderRequest
     ):
@@ -243,8 +243,9 @@ class ScoreEchoPlugin(Star):
         """
         text = event.message_str.strip()
 
+        logger.warning(f"原始文本text:{text}")
         # 正则匹配
-        pattern = r"^\s*(?:@\S+\s+)*[/\uff0f]?(评分|查分|声骸|生蚝)\s*(.*)$"
+        pattern = r"^(评分|查分|声骸|生蚝)\s*(.*)$"
         match = re.match(pattern, text, re.IGNORECASE)
 
         if not match:
