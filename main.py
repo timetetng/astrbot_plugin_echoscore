@@ -48,7 +48,7 @@ async def get_image_from_direct_event(event: AstrMessageEvent) -> list[Comp.Imag
     "astrbot_plugin_echoscore",
     "loping151 & timetetng",
     "基于loping151识别《鸣潮》声骸评分API的astrbot插件，提供LLM交互和指令两种使用方式",
-    "3.0.2",
+    "3.1.0",
     "https://github.com/timetetng/astrbot_plugin_echoscore",
 )
 class ScoreEchoPlugin(Star):
@@ -243,9 +243,7 @@ class ScoreEchoPlugin(Star):
         """
         text = event.message_str.strip()
 
-        # 正则匹配：允许前缀 @mention (已被 AstrBot 处理在 message_str 中可能表现为文本),
-        # 允许前缀 / (或全角 ／), 必须包含关键字
-        # Group 1: 关键字, Group 2: 参数部分
+        # 正则匹配
         pattern = r"^\s*(?:@\S+\s+)*[/\uff0f]?(评分|查分|声骸|生蚝)\s*(.*)$"
         match = re.match(pattern, text, re.IGNORECASE)
 
