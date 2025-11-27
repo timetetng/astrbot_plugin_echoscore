@@ -16,7 +16,7 @@ from astrbot.api.star import Context, Star, register
 
 
 async def get_image_from_direct_event(event: AstrMessageEvent) -> list[Comp.Image]:
-    """[直接模式] 从当前事件中提取所有图片组件，这是最高优先级的图片来源。"""
+    """从当前事件中提取所有图片组件，这是最高优先级的图片来源。"""
     images = []
     if (
         hasattr(event, "message_obj")
@@ -48,7 +48,7 @@ async def get_image_from_direct_event(event: AstrMessageEvent) -> list[Comp.Imag
     "astrbot_plugin_echoscore",
     "loping151 & timetetng",
     "基于loping151识别《鸣潮》声骸评分API的astrbot插件，提供LLM交互和指令两种使用方式",
-    "3.1.1",
+    "3.1.2",
     "https://github.com/timetetng/astrbot_plugin_echoscore",
 )
 class ScoreEchoPlugin(Star):
@@ -184,17 +184,33 @@ class ScoreEchoPlugin(Star):
             return {"success": False, "error": "未能成功处理任何有效图片。"}
 
         api_token = self.config.get("xwtoken", "your_token_here")
-        if api_token == "your_token_here":
-            return {"success": False, "error": "请在插件配置中填写你的 xwtoken！"}
+        
+        # 判断是否使用 WebAPI
+        if not api_token or api_token == "your_token_here":
+            # 使用 WebAPI 端点
+            api_endpoint = "https://scoreecho.loping151.site/web/score"
+            # 构造 Web 端所需的 Headers
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://scoreecho.loping151.site/",
+                "Origin": "https://scoreecho.loping151.site",
+                "X-Web-Request": "true",
+                "Accept": "*/*"
+            }
+            logger.warning("未配置有效的 xwtoken，正在使用 WebAPI 模式，请注意速率限制。")
+        else:
+            # 有 xwtoken 走认证端点
+            api_endpoint = self.config.get(
+                "endpoint", "https://scoreecho.Loping151.site/score"
+            )
+            headers = {
+                "Authorization": f"Bearer {api_token}",
+                "Content-Type": "application/json",
+            }
 
-        api_endpoint = self.config.get(
-            "endpoint", "https://scoreecho.Loping151.site/score"
-        )
-        headers = {
-            "Authorization": f"Bearer {api_token}",
-            "Content-Type": "application/json",
-        }
         payload = {"command_str": command_str, "images_base64": images_b64}
+        
         try:
             response = await self.http_client.post(
                 api_endpoint, headers=headers, json=payload
@@ -208,6 +224,15 @@ class ScoreEchoPlugin(Star):
                     "success": False,
                     "error": data.get("message", "API未能生成图片。"),
                 }
+        # 429
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 429:
+                logger.warning("WebAPI 速率限制已触发。")
+                return {
+                    "success": False,
+                    "error": "当前没有配置xwtoken或已失效，WebAPI 已达到请求速率限制，请等待或申请xwtoken。",
+                }
+            return {"success": False, "error": f"API请求返回错误状态码: {e.response.status_code} - {e}"}
         except Exception as e:
             return {"success": False, "error": f"API请求或处理时发生错误: {e}"}
 
@@ -243,7 +268,6 @@ class ScoreEchoPlugin(Star):
         """
         text = event.message_str.strip()
 
-        logger.warning(f"原始文本text:{text}")
         # 正则匹配
         pattern = r"^(评分|查分|声骸|生蚝)\s*(.*)$"
         match = re.match(pattern, text, re.IGNORECASE)
