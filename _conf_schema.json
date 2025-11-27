@@ -2,7 +2,7 @@
   "xwtoken": {
     "description": "小维API Token",
     "type": "string",
-    "hint": "请向小维申请你的API Token",
+    "hint": "请向小维申请你的API Token。如果留空或保持默认，将使用WebAPI进行评分（有速率限制）。",
     "obvious_hint": true,
     "default": "your_token_here"
   },
