@@ -204,31 +204,21 @@ class ScoreEchoPlugin(Star):
 
         api_token = self.config.get("xwtoken", "your_token_here")
 
-        # 判断是否使用 WebAPI
+        # 强制检查 xwtoken，如果无效则直接报错
         if not api_token or api_token == "your_token_here":
-            # 使用 WebAPI 端点
-            api_endpoint = "https://scoreecho.loping151.site/web/score"
-            # 构造 Web 端所需的 Headers
-            headers = {
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://scoreecho.loping151.site/",
-                "Origin": "https://scoreecho.loping151.site",
-                "X-Web-Request": "true",
-                "Accept": "*/*",
+            return {
+                "success": False,
+                "error": "未配置有效的 xwtoken。请在插件配置中填写有效的 Token 以使用评分服务。",
             }
-            logger.warning(
-                "未配置有效的 xwtoken，正在使用 WebAPI 模式，请注意速率限制。"
-            )
-        else:
-            # 有 xwtoken 走认证端点
-            api_endpoint = self.config.get(
-                "endpoint", "https://scoreecho.loping151.site/score"
-            )
-            headers = {
-                "Authorization": f"Bearer {api_token}",
-                "Content-Type": "application/json",
-            }
+
+        # 直接使用认证端点
+        api_endpoint = self.config.get(
+            "endpoint", "https://scoreecho.loping151.site/score"
+        )
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/json",
+        }
 
         payload = {"command_str": command_str, "images_base64": images_b64}
 
@@ -245,14 +235,7 @@ class ScoreEchoPlugin(Star):
                     "success": False,
                     "error": data.get("message", "API未能生成图片。"),
                 }
-        # 429
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 429:
-                logger.warning("WebAPI 速率限制已触发。")
-                return {
-                    "success": False,
-                    "error": "当前没有配置xwtoken或已失效，WebAPI 已达到请求速率限制，请等待或申请xwtoken。",
-                }
             return {
                 "success": False,
                 "error": f"API请求返回错误状态码: {e.response.status_code} - {e}",
